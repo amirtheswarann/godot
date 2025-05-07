@@ -75,14 +75,28 @@ MTLGPUFamily &operator--(MTLGPUFamily &p_family) {
 
 void MetalDeviceProperties::init_features(id<MTLDevice> p_device) {
 	features = {};
+	// TODO causes
+	const std::pair<MTLGPUFamily, int> gpu_families[] = {
+	    {MTLGPUFamilyApple1, 12}, // set to 12 instead of 9 to support future version
+	    {MTLGPUFamilyCommon1, 3},
+		{MTLGPUFamilyMac2, 1},
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 150000 || __IPHONE_OS_VERSION_MAX_ALLOWED >= 170000 || __TV_OS_VERSION_MAX_ALLOWED >= 170000
+		{MTLGPUFamilyMetal3, 1}
+#endif
+	};
 
-	features.highestFamily = MTLGPUFamilyApple1;
-	for (MTLGPUFamily family = MTLGPUFamilyApple9; family >= MTLGPUFamilyApple1; --family) {
-		if ([p_device supportsFamily:family]) {
-			features.highestFamily = family;
-			break;
-		}
-	}
+    for (const auto &family_range : gpu_families) {
+        MTLGPUFamily base_family = family_range.first;
+        int count = family_range.second;
+        MTLGPUFamily current_family = base_family;
+        for (int i = count - 1; i >= 0; --i) {
+            current_family = static_cast<MTLGPUFamily>(static_cast<NSInteger>(base_family) + i);
+            if ([p_device supportsFamily:current_family]) {
+                features.highestFamily = current_family;
+                break;
+            }
+        }
+    }
 
 	if (@available(macOS 11, iOS 16.4, tvOS 16.4, *)) {
 		features.supportsBCTextureCompression = p_device.supportsBCTextureCompression;
@@ -186,7 +200,7 @@ void MetalDeviceProperties::init_limits(id<MTLDevice> p_device) {
 
 	// FST: Maximum number of layers per 1D texture array, 2D texture array, or 3D texture.
 	limits.maxImageArrayLayers = 2048;
-	if ([p_device supportsFamily:MTLGPUFamilyApple3]) {
+	if ([p_device supportsFamily:MTLGPUFamilyApple3] || [p_device supportsFamily:MTLGPUFamilyMac2]) {
 		// FST: Maximum 2D texture width and height.
 		limits.maxFramebufferWidth = 16384;
 		limits.maxFramebufferHeight = 16384;

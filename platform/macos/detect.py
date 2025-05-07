@@ -83,10 +83,11 @@ def configure(env: "SConsEnvironment"):
         env.Append(CCFLAGS=["-arch", "arm64", "-mmacosx-version-min=11.0"])
         env.Append(LINKFLAGS=["-arch", "arm64", "-mmacosx-version-min=11.0"])
     elif env["arch"] == "x86_64":
-        print("Building for macOS 10.13+.")
-        env.Append(ASFLAGS=["-arch", "x86_64", "-mmacosx-version-min=10.13"])
-        env.Append(CCFLAGS=["-arch", "x86_64", "-mmacosx-version-min=10.13"])
-        env.Append(LINKFLAGS=["-arch", "x86_64", "-mmacosx-version-min=10.13"])
+        min_version = "11.0" if env["metal"] else "10.13"
+        print(f"Building for macOS {min_version}+.")
+        env.Append(ASFLAGS=["-arch", "x86_64", f"-mmacosx-version-min={min_version}"])
+        env.Append(CCFLAGS=["-arch", "x86_64", f"-mmacosx-version-min={min_version}"])
+        env.Append(LINKFLAGS=["-arch", "x86_64", f"-mmacosx-version-min={min_version}"])
 
     env.Append(CCFLAGS=["-ffp-contract=off"])
     env.Append(CCFLAGS=["-fobjc-arc"])
@@ -250,11 +251,7 @@ def configure(env: "SConsEnvironment"):
         env.Prepend(CPPEXTPATH=["#thirdparty/angle/include"])
 
     env.Append(LINKFLAGS=["-rpath", "@executable_path/../Frameworks", "-rpath", "@executable_path"])
-
-    if env["metal"] and env["arch"] != "arm64":
-        print_warning("Target architecture '{}' does not support the Metal rendering driver".format(env["arch"]))
-        env["metal"] = False
-
+    
     if env["metal"]:
         env.AppendUnique(CPPDEFINES=["METAL_ENABLED", "RD_ENABLED"])
         extra_frameworks.add("Metal")
