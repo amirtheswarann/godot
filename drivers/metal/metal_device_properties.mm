@@ -239,6 +239,8 @@ void MetalDeviceProperties::init_limits(id<MTLDevice> p_device) {
 	// Maximum number of textures the device can access, per stage, from an argument buffer.
 	if ([p_device supportsFamily:MTLGPUFamilyApple6]) {
 		limits.maxTexturesPerArgumentBuffer = 1'000'000;
+	} else if ([p_device supportsFamily:MTLGPUFamilyMac2]) {
+		limits.maxTexturesPerArgumentBuffer = 1'000'000;
 	} else if ([p_device supportsFamily:MTLGPUFamilyApple4]) {
 		limits.maxTexturesPerArgumentBuffer = 96;
 	} else {
@@ -310,7 +312,10 @@ void MetalDeviceProperties::init_limits(id<MTLDevice> p_device) {
 		limits.maxPerStageTextureCount = 128;
 	} else if ([p_device supportsFamily:MTLGPUFamilyApple4]) {
 		limits.maxPerStageTextureCount = 96;
-	} else {
+	} else if ([p_device supportsFamily:MTLGPUFamilyMac2]) {
+		limits.maxPerStageTextureCount = 128;
+	}
+	 else {
 		limits.maxPerStageTextureCount = 31;
 	}
 
@@ -328,12 +333,18 @@ void MetalDeviceProperties::init_limits(id<MTLDevice> p_device) {
 	}
 
 #if TARGET_OS_IOS && !TARGET_OS_MACCATALYST
+	// Metal requires 32-byte alignment for uniform buffers on all platforms
 	limits.minUniformBufferOffsetAlignment = 64;
 #endif
 
 #if TARGET_OS_OSX
-	// This is Apple Silicon specific.
+	// Metal requires 32-byte alignment for uniform buffers on all platforms
+	
 	limits.minUniformBufferOffsetAlignment = 16;
+	if ([p_device supportsFamily:MTLGPUFamilyMac2]) {
+		limits.maxPerStageTextureCount = 32;
+	}
+
 #endif
 
 	limits.maxDrawIndexedIndexValue = std::numeric_limits<uint32_t>::max() - 1;

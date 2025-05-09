@@ -463,6 +463,7 @@ void BoundUniformSet::merge_into(ResourceUsageMap &p_dst) const {
 }
 
 void MDCommandBuffer::_render_bind_uniform_sets() {
+	// TODO RENDER ASSERTION
 	DEV_ASSERT(type == MDCommandBufferStateType::Render);
 	if (!render.dirty.has_flag(RenderState::DIRTY_UNIFORMS)) {
 		return;
@@ -734,6 +735,16 @@ void MDCommandBuffer::render_draw(uint32_t p_vertex_count,
 		uint32_t p_first_instance) {
 	DEV_ASSERT(type == MDCommandBufferStateType::Render);
 	ERR_FAIL_NULL_MSG(render.pipeline, "No pipeline set for render command buffer.");
+
+	// Ensure buffer alignments are correct before setting dirty state
+	// for (uint32_t i = 0; i < render.uniform_sets.size(); i++) {
+	// 	MDUniformSet *set = render.uniform_sets[i];
+	// 	if (set != nullptr) {
+	// 		// Mark the set as dirty to force realignment
+	// 		render.uniform_set_mask |= 1ULL << i;
+	// 		render.dirty.set_flag(RenderState::DIRTY_UNIFORMS);
+	// 	}
+	// }
 
 	_render_set_dirty_state();
 
